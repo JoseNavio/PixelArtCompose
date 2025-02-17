@@ -1,5 +1,6 @@
 package com.josenavio.pixelartcanvas.ui.screens.pixel
 
+import android.util.Log
 import androidx.compose.runtime.toMutableStateMap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
@@ -22,6 +23,7 @@ sealed interface PixelEvent {
 enum class PixelCanvasTool {
     PAN,
     DRAW,
+    BUCKET,
     ERASE,
 }
 
@@ -35,7 +37,7 @@ data class PixelState(
     val width: Int = 32,
     val height: Int = 32,
     var selectedTool: PixelCanvasTool = PixelCanvasTool.DRAW,
-    val selectedColor: Color = Color.Red,
+    val selectedColor: Color = PixelColor.BLACK,
     val colors: MutableMap<PixelKey, Color> =
         List(width) { x ->
             List(height) { y ->
@@ -60,6 +62,8 @@ class PixelViewModel : ViewModel() {
 
             is PixelEvent.OnCenterCanvas -> {
 
+                Log.d("Navio_ViewModel", "OnCenterCanvas")
+
                 _state.update {
                     it.copy(
                         scale = 1f,
@@ -71,14 +75,25 @@ class PixelViewModel : ViewModel() {
             is PixelEvent.OnPixelTapped -> {
 
                 val newColors = _state.value.colors
-
+                // Draw
                 if (_state.value.selectedTool == PixelCanvasTool.DRAW) {
                     newColors.also { map ->
                         map[PixelKey(event.x, event.y)] = _state.value.selectedColor
                     }
-                } else if (_state.value.selectedTool == PixelCanvasTool.ERASE) {
+                }
+                // Erase
+                else if (_state.value.selectedTool == PixelCanvasTool.ERASE) {
                     newColors.also { map ->
                         map[PixelKey(event.x, event.y)] = Color.Transparent
+                    }
+                }
+                // Bucket
+                else if (_state.value.selectedTool == PixelCanvasTool.BUCKET) {
+                    // Now it just changes all the canvas pixels to the selected color
+                    newColors.also { map ->
+                        map.forEach { (key, _) ->
+                            map[key] = _state.value.selectedColor
+                        }
                     }
                 }
                 // Update the state
@@ -102,10 +117,10 @@ class PixelViewModel : ViewModel() {
             is PixelEvent.OnTranslateChanged -> {
 
 //                if (_state.value.selectedTool == PixelCanvasTool.PAN) {
-                    val newOffset = _state.value.offset + event.offset
-                    _state.update {
-                        it.copy(offset = newOffset)
-                    }
+                val newOffset = _state.value.offset + event.offset
+                _state.update {
+                    it.copy(offset = newOffset)
+                }
 //                }
 
             }
