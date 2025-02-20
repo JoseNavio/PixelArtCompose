@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,6 +32,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,32 +71,53 @@ fun PixelScreen(
         Box(
             modifier = Modifier.padding(paddingValues),
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = 32.dp)
-                    .statusBarsPadding(),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                // Top bar
-                ScrollableColumn(
-                    items = pixelTopButtons,
-                    pixelEvent = pixelEvent
-                )
-            }
             // Canvas
             PixelCanvas(pixelState, pixelEvent)
-            // Bottom bars
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Bottom
-            ) {
-                // Bottom bar
-                BottomBar(pixelState, pixelEvent)
-                // Colors
-                ColorBar(pixelState, pixelEvent)
-            }
+            // Top bar
+            TopBar(pixelEvent)
+            // Bottom bar
+            BottomBar(pixelState, pixelEvent)
         }
+    }
+}
+
+@Composable
+private fun TopBar(pixelEvent: (PixelEvent) -> Unit) {
+    // Top bar
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(end = 16.dp)
+            .statusBarsPadding(),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        ScrollableColumn(
+            mainButton = mainTopButton,
+            items = pixelTopButtons,
+            pixelEvent = pixelEvent
+        )
+    }
+}
+
+@Composable
+private fun BottomBar(pixelState: PixelState, pixelEvent: (PixelEvent) -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Bottom,
+        horizontalAlignment = Alignment.End
+    ) {
+        // Translate button
+        PixelIconButton(
+            icon = appDrawables.icon_pan,
+            onClick = { },
+            modifier = Modifier
+                .padding(16.dp)
+                .size(56.dp)
+        )
+        // Bottom bar
+        ToolBar(pixelState, pixelEvent)
+        // Colors
+        ColorBar(pixelState, pixelEvent)
     }
 }
 
@@ -122,121 +148,11 @@ private fun PixelCanvas(pixelState: PixelState, pixelEvent: (PixelEvent) -> Unit
     }
 }
 
-
-//
-//@Composable
-//private fun PixelGrid(pixelState: PixelState, pixelEvent: (PixelEvent) -> Unit) {
-//    val aspectRatio = pixelState.width.toFloat() / pixelState.height.toFloat()
-//
-//    Canvas(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .aspectRatio(aspectRatio)
-//            .offset { pixelState.offset }
-//            .scale(pixelState.scale)
-//            .clip(RoundedCornerShape(2.dp))
-//            .pointerInput(Unit) {
-//                detectTapGestures(onTap = { offset ->
-//                    val gridWidth = pixelState.width
-//                    val gridHeight = pixelState.height
-//
-//                    val x = ((gridWidth * offset.x) / size.width).toInt()
-//                    val y = ((gridHeight * offset.y) / size.height).toInt()
-//
-//                    pixelEvent(PixelEvent.OnPixelTapped(x, y))
-//                })
-//            }
-//            .pointerInput(pixelState.selectedTool) {
-//                if (pixelState.selectedTool != PixelCanvasTool.PAN) {
-//
-//                    detectDragGestures { change, _ ->
-//
-//                        val gridWidth = pixelState.width
-//                        val gridHeight = pixelState.height
-//
-//                        val x = ((gridWidth * change.position.x) / size.width).toInt()
-//                        val y = ((gridHeight * change.position.y) / size.height).toInt()
-//
-//                        pixelEvent(PixelEvent.OnPixelTapped(x, y))
-//                    }
-//                }
-//            }
-//            .drawBehind {
-//
-//                // Background
-//                repeat(pixelState.width) { x ->
-//                    repeat(pixelState.height) { y ->
-//                        val checkeredColor = if ((x + y) % 2 == 0) Color.LightGray else Color.Gray
-//                        drawRect(
-//                            style = Fill,
-//                            color = checkeredColor,
-//                            topLeft = Offset(
-//                                x * size.width / pixelState.width,
-//                                y * size.height / pixelState.height
-//                            ),
-//                            size = Size(
-//                                size.width / pixelState.width + 1,
-//                                size.height / pixelState.height + 1
-//                            )
-//                        )
-//                    }
-//                }
-//            }
-//    ) {
-//        // Clip
-//        clipRect {
-//            // Transformations
-//            withTransform(
-//                transformBlock = { },
-//                drawBlock = {
-//                    // Pixels
-//                    repeat(pixelState.width) { x ->
-//                        repeat(pixelState.height) { y ->
-//                            pixelState.colors[PixelKey(x, y)]?.let {
-//                                drawRect(
-//                                    style = Fill,
-//                                    color = it,
-//                                    topLeft = Offset(
-//                                        x * size.width / pixelState.width,
-//                                        y * size.height / pixelState.height
-//                                    ),
-//                                    size = Size(
-//                                        size.width / pixelState.width + 1,
-//                                        size.height / pixelState.height + 1
-//                                    )
-//                                )
-//                            }
-//                        }
-//                    }
-//                    // Grid
-//                    if (pixelState.showGrid) {
-//                        repeat(pixelState.width) { x ->
-//                            repeat(pixelState.height) { y ->
-//                                drawRect(
-//                                    style = Stroke(1.dp.toPx() / pixelState.scale),
-//                                    color = Color.Cyan.copy(alpha = 0.45f),
-//                                    topLeft = Offset(
-//                                        x * size.width / pixelState.width,
-//                                        y * size.height / pixelState.height
-//                                    ),
-//                                    size = Size(
-//                                        size.width / pixelState.width + 1,
-//                                        size.height / pixelState.height + 1
-//                                    )
-//                                )
-//                            }
-//                        }
-//                    }
-//                }
-//            )
-//        }
-//    }
-//}
-
-
 @Composable
 private fun PixelGrid(pixelState: PixelState, pixelEvent: (PixelEvent) -> Unit) {
     val aspectRatio = pixelState.width.toFloat() / pixelState.height.toFloat()
+    // Avoids pixel gaps
+    val addition = 1f
 
     Canvas(
         modifier = Modifier
@@ -311,8 +227,8 @@ private fun PixelGrid(pixelState: PixelState, pixelEvent: (PixelEvent) -> Unit) 
                                         y * size.height / pixelState.height
                                     ),
                                     size = Size(
-                                        size.width / pixelState.width,
-                                        size.height / pixelState.height
+                                        size.width / pixelState.width + addition,
+                                        size.height / pixelState.height + addition
                                     )
                                 )
                             }
@@ -347,20 +263,15 @@ private fun PixelGrid(pixelState: PixelState, pixelEvent: (PixelEvent) -> Unit) 
 private fun ColorBar(pixelState: PixelState, onEvent: (PixelEvent) -> Unit) {
     Row(
         modifier = Modifier
+            .navigationBarsPadding()
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
             .clip(
-                RoundedCornerShape(
-                    topStart = 16.dp,
-                    topEnd = 16.dp,
-                    bottomEnd = 0.dp,
-                    bottomStart = 0.dp
-                )
+                CircleShape
             )
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .padding(horizontal = 32.dp, vertical = 16.dp)
-            .navigationBarsPadding(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
 
@@ -392,11 +303,11 @@ private fun ColorBar(pixelState: PixelState, onEvent: (PixelEvent) -> Unit) {
 }
 
 @Composable
-private fun BottomBar(pixelState: PixelState, onEvent: (PixelEvent) -> Unit) {
+private fun ToolBar(pixelState: PixelState, onEvent: (PixelEvent) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom
     ) {
@@ -412,13 +323,22 @@ private fun BottomBar(pixelState: PixelState, onEvent: (PixelEvent) -> Unit) {
             icon = appDrawables.icon_bucket,
             onClick = { onEvent(PixelEvent.OnSelectTool(PixelCanvasTool.BUCKET)) }
         )
+        // Text
+        PixelIconButton(
+            icon = appDrawables.icon_text,
+            onClick = { }
+        )
         // Erase
         PixelIconButton(
             isSelected = pixelState.selectedTool == PixelCanvasTool.ERASE,
             icon = appDrawables.icon_erase,
             onClick = { onEvent(PixelEvent.OnSelectTool(PixelCanvasTool.ERASE)) }
         )
-        ScrollableColumn(pixelEvent = onEvent)
+        // Picker
+        PixelIconButton(
+            icon = appDrawables.icon_picker,
+            onClick = { }
+        )
     }
 }
 
@@ -427,42 +347,46 @@ data class PixelButton(
     val event: PixelEvent? = null,
 )
 
+val mainTopButton = PixelButton(
+    icon = appDrawables.icon_eye,
+)
+
 val pixelTopButtons = listOf(
     PixelButton(
-        icon = appDrawables.icon_eye,
+        icon = appDrawables.icon_center,
     ),
     PixelButton(
         icon = appDrawables.icon_grid,
     ),
 )
 
-val pixelBottomButtons = listOf(
-    PixelButton(
-        icon = appDrawables.icon_center,
-        event = PixelEvent.OnCenterCanvas
-    ),
-    PixelButton(
-        icon = appDrawables.icon_pan,
-    ),
-    PixelButton(
-        icon = appDrawables.icon_magnifier,
-    ),
-    PixelButton(
-        icon = appDrawables.icon_lock,
-    ),
-)
-
 @Composable
 private fun ScrollableColumn(
-    items: List<PixelButton> = pixelBottomButtons,
+    mainButton: PixelButton,
+    items: List<PixelButton>,
     pixelEvent: (PixelEvent) -> Unit,
 ) {
 
-    Column(modifier = Modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        if (false) {
-            // Scrollable
+    var isShowing by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Main button
+        PixelIconButton(
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .size(56.dp),
+            icon = mainButton.icon,
+            onClick = {
+                isShowing = !isShowing
+            }
+        )
+        // Scrollable
+        if (isShowing) {
             LazyColumn(
-                reverseLayout = false,
+                modifier = Modifier.padding(top = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(items) { item ->
@@ -470,6 +394,8 @@ private fun ScrollableColumn(
                         modifier = Modifier.size(48.dp),
                         icon = item.icon,
                         onClick = {
+                            // Close bar
+                            isShowing = false
                             item.event?.let { event ->
                                 pixelEvent(event)
                             }
@@ -478,14 +404,6 @@ private fun ScrollableColumn(
                 }
             }
         }
-        // Selected // todo Add selected...
-        PixelIconButton(
-            modifier = Modifier
-                .padding(top = 16.dp)
-                .size(56.dp),
-            icon = items.first().icon,
-            onClick = { items.first().event?.let { event -> pixelEvent(event) } }
-        )
     }
 
 }

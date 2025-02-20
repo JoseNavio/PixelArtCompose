@@ -25,6 +25,7 @@ enum class PixelCanvasTool {
     DRAW,
     BUCKET,
     ERASE,
+    PICKER
 }
 
 
@@ -34,8 +35,8 @@ data class PixelState(
     val showGrid: Boolean = false,
     val scale: Float = 1f,
     val offset: IntOffset = IntOffset.Zero,
-    val width: Int = 32,
-    val height: Int = 32,
+    val width: Int = 40,
+    val height: Int = 120,
     var selectedTool: PixelCanvasTool = PixelCanvasTool.DRAW,
     val selectedColor: Color = PixelColor.BLACK,
     val colors: MutableMap<PixelKey, Color> =
