@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.josenavio.pixelartcanvas"
-        minSdk = 28
+        minSdk = 31
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -42,7 +42,8 @@ android {
 }
 
 dependencies {
-
+    // Splash Screen
+    implementation(libs.androidx.core.splashscreen)
     //Navigation
     implementation(libs.androidx.navigation.compose)
     //Serialization (Use for navigation)
